@@ -21,6 +21,17 @@
             <!-- Display current profile picture -->
             <img src="{{ Auth::user()->profile_picture ? asset('storage/' . Auth::user()->profile_picture) : asset('default-profile.png') }}" alt="Profile Picture" class="rounded-full w-32 h-32 mb-4">
 
+            <!-- Error Messages -->
+            @if ($errors->any())
+                <div class="mb-4 text-red-600">
+                    <ul>
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <!-- Profile Picture Update Form -->
             <form method="POST" action="{{ route('profile.picture.update') }}" enctype="multipart/form-data">
                 @csrf

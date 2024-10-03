@@ -11,7 +11,7 @@ class PostController extends Controller
     // Get all posts
     public function index()
     {
-        $posts = Post::with('user')->latest()->get();
+        $posts = Post::with('user', 'comments.user')->latest()->get();
         return response()->json($posts);
     }
 

@@ -44,16 +44,16 @@ class ProfileController extends Controller
     public function updateProfilePicture(Request $request): RedirectResponse
     {
         $request->validate([
-            'profile_picture' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'profile_picture' => 'required|image|mimes:jpg,jpeg,png|max:5120',
         ]);
 
-        $user = $request->user();
+        $user = Auth::user();
 
         // Handle the file upload
         if ($request->hasFile('profile_picture')) {
             // Delete old profile picture if it exists
             if ($user->profile_picture) {
-                Storage::delete($user->profile_picture);
+                Storage::delete('public/' . $user->profile_picture);
             }
 
             // Store the new profile picture
