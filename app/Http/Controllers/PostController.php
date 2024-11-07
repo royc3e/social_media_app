@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Events\PostCreated;
 use App\Models\Post;
 use Illuminate\Support\Facades\Auth;
 
@@ -27,6 +28,12 @@ class PostController extends Controller
             'content' => $request->content,
         ]);
 
+        // Log to confirm broadcasting
+        \Log::info('Broadcasting post created event', ['post' => $post]);
+
+        // Broadcast event
+        broadcast(new PostCreated($post))->toOthers();
+        
         return response()->json($post, 201);
     }
 

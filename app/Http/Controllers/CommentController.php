@@ -9,28 +9,53 @@ use Illuminate\Support\Facades\Auth;
 
 class CommentController extends Controller
 {
+    // Store a new comment for a specific post
     public function store(Request $request, $postId)
-{
-    $request->validate([
-        'comment' => 'required|string|max:255',
-    ]);
+    {
+        $request->validate([
+            'comment' => 'required|string|max:500',
+        ]);
 
-    $comment = Comment::create([
-        'post_id' => $postId,
-        'user_id' => auth()->id(), // Ensure to set the user_id if using authentication
-        'comment' => $request->comment,
-    ]);
+        $comment = Comment::create([
+            'post_id' => $postId,
+            'user_id' => auth()->id(), // Ensure to set the user_id if using authentication
+            'comment' => $request->comment,
+        ]);
 
-    return response()->json([
-        'message' => 'Comment added successfully.',
-        'comment' => $comment
-    ], 201);
-}
+        return response()->json([
+            'message' => 'Comment added successfully.',
+            'comment' => $comment
+        ], 201);
+    }
 
+    // Fetch all posts with their comments
     public function index()
     {
         $posts = Post::with(['comments.user'])->get(); // Eager load comments and their users
         \Log::info('Fetched posts with comments:', $posts->toArray()); // Log the posts with comments
         return response()->json($posts);
+    }
+
+    // Update a specific comment
+    public function update(Request $request, $postId, $commentId)
+    {
+        $request->validate([
+            'comment' => 'required|string|max:500',
+        ]);
+
+        $comment = Comment::where('id', $commentId)->where('post_id', $postId)->firstOrFail();
+        $comment->comment = $request->input('comment');
+        $comment->save();
+
+        return response()->json(['comment' => $comment]);
+    }
+
+    // Delete a specific comment
+    public function destroy($postId, $commentId)
+    {
+        $comment = Comment::where('id', $commentId)->where('post_id', $postId)->firstOrFail();
+        $comment->delete();
+
+        return response()->json(['message' => 'Comment deleted successfully']);
     }
 }
