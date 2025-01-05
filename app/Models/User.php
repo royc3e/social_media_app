@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -21,6 +20,10 @@ class User extends Authenticatable
         'email',
         'password',
         'profile_picture',
+        'birthdate',   // Add birthdate here
+        'age',          // Add age here
+        'phone',        // Add phone here
+        'gender',       // Add gender here
     ];
 
     /**
@@ -43,6 +46,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'birthdate' => 'date',  // Cast birthdate to date format
         ];
     }
 }

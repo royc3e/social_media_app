@@ -18,15 +18,19 @@ class CommentController extends Controller
 
         $comment = Comment::create([
             'post_id' => $postId,
-            'user_id' => auth()->id(), // Ensure to set the user_id if using authentication
+            'user_id' => auth()->id(),
             'comment' => $request->comment,
         ]);
 
+        // Load the user relationship
+        $comment->load('user');
+
         return response()->json([
             'message' => 'Comment added successfully.',
-            'comment' => $comment
+            'comment' => $comment, // Includes user data
         ], 201);
     }
+
 
     // Fetch all posts with their comments
     public function index()

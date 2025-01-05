@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Events\PostCreated;
 use App\Models\Post;
+use App\Events\TestNotification;
 use Illuminate\Support\Facades\Auth;
 
 class PostController extends Controller
@@ -12,7 +13,13 @@ class PostController extends Controller
     // Get all posts
     public function index()
     {
-        $posts = Post::with('user', 'comments.user')->latest()->get();
+        $posts = Post::with('user', 'likes', 'comments.user')->latest()->get();
+
+        // Add 'isLiked' property for each post
+        $posts->each(function ($post) {
+            $post->isLiked = $post->likes->contains('user_id', Auth::id());
+        });
+
         return response()->json($posts);
     }
 
@@ -28,14 +35,19 @@ class PostController extends Controller
             'content' => $request->content,
         ]);
 
-        // Log to confirm broadcasting
-        \Log::info('Broadcasting post created event', ['post' => $post]);
+        $post->load('user');
 
-        // Broadcast event
-        broadcast(new PostCreated($post))->toOthers();
-        
-        return response()->json($post, 201);
+        event(new TestNotification([
+            'author' => $post->user->name,  // Using the user's name here
+            'title' => $post->content,      // Assuming title is the content of the post
+        ]));
+
+        return response()->json([
+            'post' => $post,
+            'created_at' => $post->created_at->format('Y-m-d H:i:s') // Format date properly
+        ], 201);        
     }
+
 
     public function destroy($id)
     {

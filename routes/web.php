@@ -39,6 +39,15 @@ Route::get('/dashboard', function () {
     Route::post('/posts/{post}/like', [LikeController::class, 'store'])->name('like.store');
     Route::delete('/posts/{post}/unlike', [LikeController::class, 'destroy'])->name('like.destroy');
 
+    //PUSHER ROUTE NOTIFICATION LOGIC
+    Route::middleware('auth')->get('/notifications/unread', [NotificationController::class, 'getUnreadNotifications']);
+    Route::view('/pusher','pusher');
+    Route::get('/notifications/unread', [NotificationController::class, 'getUnreadNotifications']);
+
+
+
+
+
 });
 
 

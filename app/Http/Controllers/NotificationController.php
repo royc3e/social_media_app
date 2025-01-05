@@ -9,41 +9,43 @@ use Illuminate\Support\Facades\Auth;
 class NotificationController extends Controller
 {
     // Fetch unread notifications for the authenticated user
-    public function unread()
+    public function getUnreadNotifications(Request $request)
     {
-        $notifications = Notification::where('user_id', Auth::id())
-                                      ->where('is_read', false)
-                                      ->get();
+        $user = $request->user(); // Assuming the user is authenticated
 
-        return response()->json($notifications);
+        if (!$user) {
+            return response()->json(['error' => 'User not authenticated'], 401);
+        }
+
+        // Fetch unread notifications for the user
+        $unreadNotifications = Notification::where('user_id', $user->id)
+            ->where('is_read', false)
+            ->get();
+
+        if ($unreadNotifications->isEmpty()) {
+            // Debugging: If no unread notifications, return a message
+            return response()->json(['message' => 'No unread notifications found']);
+        }
+
+        return response()->json($unreadNotifications);
     }
+
 
     // Mark a notification as read
     public function markAsRead($id)
     {
-        $notification = Notification::where('id', $id)
-                                    ->where('user_id', Auth::id())
-                                    ->first();
+        $notification = auth()->user()->notifications()->findOrFail($id);
+        $notification->update(['is_read' => true]);
 
-        if ($notification) {
-            $notification->is_read = true;
-            $notification->save();
-        }
-
-        return response()->json(['status' => 'success']);
+        return response()->json(['message' => 'Notification marked as read']);
     }
 
     // Delete a notification
-    public function destroy($id)
+    public function deleteNotification($id)
     {
-        $notification = Notification::where('id', $id)
-                                    ->where('user_id', Auth::id())
-                                    ->first();
+        $notification = auth()->user()->notifications()->findOrFail($id);
+        $notification->delete();
 
-        if ($notification) {
-            $notification->delete();
-        }
-
-        return response()->json(['status' => 'deleted']);
+        return response()->json(['message' => 'Notification deleted']);
     }
 }

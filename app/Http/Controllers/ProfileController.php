@@ -25,15 +25,36 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(Request $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        // Validate the additional fields
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . Auth::id(),
+            'birthdate' => 'required|date',
+            'phone' => 'required|string|max:15',
+            'gender' => 'nullable|in:male,female,other',
+        ]);
 
+        $user = $request->user();
+
+        // Calculate the age based on the birthdate
+        $birthdate = new \DateTime($validatedData['birthdate']);
+        $age = $birthdate->diff(new \DateTime())->y;
+
+        // Fill in the user's profile with the validated data
+        $user->fill($validatedData);
+
+        // Update the age
+        $user->age = $age;
+
+        // If the email is changed, mark it as unverified
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
         }
 
-        $request->user()->save();
+        // Save the user data
+        $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

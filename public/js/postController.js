@@ -2,6 +2,8 @@ angular.module('socialApp', [])
     .controller('PostController', function($scope, $http) {
         $scope.posts = [];
         $scope.newPost = {};
+        $scope.notifications = []; // To hold notifications
+        
 
         // Format date function
         $scope.formatDate = function(dateString) {
@@ -18,15 +20,20 @@ angular.module('socialApp', [])
 
         // Create a new post
         $scope.createPost = function() {
-            $http.post('/posts', $scope.newPost)
+            $http.post('/posts', { content: $scope.newPost.content })
             .then(function(response) {
-                $scope.posts.unshift(response.data);
+                const post = response.data.post; // Backend returns the complete post with `user`
+        
+                // Add the new post to the top of the list
+                $scope.posts.unshift(post);
+        
+                // Reset the newPost object to clear the input field
                 $scope.newPost = {};
             }, function(error) {
-                alert('Error creating post');
+                console.error('Error creating post:', error);
+                alert('Error creating post. Please try again.');
             });
         };
-
         
         // Fetch all posts
         $scope.getPosts = function() {
@@ -35,6 +42,7 @@ angular.module('socialApp', [])
                 // Initialize showDropdown for each post
                 $scope.posts = response.data.map(post => {
                     post.showDropdown = false; // Initialize to false
+                    post.isLiked = post.isLiked || false;   
                     return post;
                 });
                 console.log('Fetched posts:', response.data);
@@ -161,7 +169,7 @@ angular.module('socialApp', [])
             }
         };
 
-
+        // Listen for clicks outside the dropdown menus
         document.addEventListener('click', function(event) {
             if (!event.target.closest('.three-dot-menu')) {
                 // Close all comment dropdowns when clicking outside
@@ -174,11 +182,62 @@ angular.module('socialApp', [])
             }
         });
 
+        // Ensure posts and notifications are always arrays
+        $scope.safeForEach = function(array, callback) {
+            if (Array.isArray(array)) {
+                array.forEach(callback);
+            }
+        };
+
+        // Toggle notifications sidebar visibility
         $scope.toggleNotifications = function() {
             $scope.showNotifications = !$scope.showNotifications;
             if ($scope.showNotifications) {
                 $scope.getUnreadNotifications(); // Fetch unread notifications when opening
             }
+        };
+
+
+        // Fetch unread notifications from the backend
+        $scope.getUnreadNotifications = function() {
+            $http.get('/notifications/unread')
+                .then(function(response) {
+                    $scope.notifications = response.data.notifications || [];
+                }, function(error) {
+                    if (error.status === 404) {
+                        console.error('Notifications endpoint not found, handling gracefully.');
+                    } else {
+                        alert('Error fetching notifications');
+                    }
+                });
+        };
+
+        // Mark a notification as read
+        $scope.markNotificationAsRead = function(notificationId) {
+            $http.put('/notifications/' + notificationId + '/read')
+                .then(function(response) {
+                    const notification = $scope.notifications.find(function(n) {
+                        return n.id === notificationId;
+                    });
+                    if (notification) {
+                        notification.is_read = true;
+                    }
+                }, function(error) {
+                    alert('Error marking notification as read');
+                });
+        };
+
+        // Delete a notification
+        $scope.deleteNotification = function(notificationId) {
+            $http.delete('/notifications/' + notificationId)
+                .then(function(response) {
+                    $scope.notifications = $scope.notifications.filter(function(n) {
+                        return n.id !== notificationId;
+                    });
+                    alert('Notification deleted successfully');
+                }, function(error) {
+                    alert('Error deleting notification');
+                });
         };
 
         
